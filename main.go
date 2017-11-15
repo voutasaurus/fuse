@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal("error creating request:", err)
 	}
-	res, err := (&http.Client{Transport: rt(h)}).Do(r)
+	res, err := (&http.Client{Transport: HandlerRoundTripper(h)}).Do(r)
 	if err != nil {
 		log.Fatal("error processing request:", err)
 	}
@@ -29,14 +29,14 @@ func serve(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "hello world\n")
 }
 
-type funcRoundTripper func(r *http.Request) (*http.Response, error)
+type RoundTripperFunc func(r *http.Request) (*http.Response, error)
 
-func (f funcRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+func (f RoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return f(r)
 }
 
-func rt(h http.Handler) http.RoundTripper {
-	return funcRoundTripper(func(r *http.Request) (*http.Response, error) {
+func HandlerRoundTripper(h http.Handler) http.RoundTripper {
+	return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 		return w.Result(), nil
